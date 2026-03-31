@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSE 數學 Past Paper 衝刺打卡表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 自定義勾選框樣式 */
+        .custom-checkbox {
+            width: 1.5rem;
+            height: 1.5rem;
+            cursor: pointer;
+            accent-color: #3b82f6;
+        }
+        /* 表格行懸停效果 */
+        tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        /* 隱藏滾動條但保持可滾動 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        <!-- Header -->
+        <div class="bg-blue-600 text-white p-6 md:p-8">
+            <h1 class="text-2xl md:text-3xl font-bold mb-2">📊 DSE 數學 (必修部分) 衝刺打卡表</h1>
+            <p class="text-blue-100 text-sm md:text-base">
+                距離考試還有 9 天！優先完成近 8 年（2018-2025）的試卷。做完立刻訂正，把薄弱課題寫在右側。<br>
+                <span class="font-semibold text-yellow-300">💡 你的進度會自動保存在瀏覽器中，隨時回來打卡！</span>
+            </p>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="p-6 md:p-8 border-b border-slate-100 bg-slate-50/50">
+            <div class="flex justify-between items-end mb-2">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-700">總體完成進度</h2>
+                    <p class="text-sm text-slate-500">已打勾：<span id="completed-count" class="font-bold text-blue-600">0</span> / <span id="total-count">0</span> 項任務</p>
+                </div>
+                <div class="text-2xl font-bold text-blue-600" id="progress-percentage">0%</div>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-3 md:h-4 overflow-hidden">
+                <div id="progress-bar" class="bg-blue-500 h-3 md:h-4 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+            <div class="mt-4 flex gap-3">
+                <button onclick="window.print()" class="text-sm bg-white border border-slate-300 text-slate-600 px-4 py-2 rounded-lg hover:bg-slate-50 transition shadow-sm flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    列印表格
+                </button>
+                <button onclick="clearData()" class="text-sm bg-white border border-red-200 text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition shadow-sm">
+                    清除紀錄
+                </button>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="overflow-x-auto no-scrollbar">
+            <table class="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                    <tr class="bg-slate-100 text-slate-600 text-sm uppercase tracking-wider">
+                        <th class="p-4 font-semibold text-center w-24 border-b border-slate-200">年份</th>
+                        <th class="p-4 font-semibold text-center w-28 border-b border-slate-200">卷一 完成<br><span class="text-xs font-normal text-slate-400">(限時 2h15m)</span></th>
+                        <th class="p-4 font-semibold text-center w-28 border-b border-slate-200 text-blue-600">卷一 訂正<br><span class="text-xs font-normal text-blue-400">(重點!)</span></th>
+                        <th class="p-4 font-semibold text-center w-28 border-b border-slate-200">卷二 完成<br><span class="text-xs font-normal text-slate-400">(限時 1h15m)</span></th>
+                        <th class="p-4 font-semibold text-center w-28 border-b border-slate-200 text-blue-600">卷二 訂正<br><span class="text-xs font-normal text-blue-400">(重點!)</span></th>
+                        <th class="p-4 font-semibold border-b border-slate-200">錯題記錄 / 薄弱課題 (考前重溫)</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body" class="text-slate-700">
+                    <!-- 數據將由 JavaScript 動態生成 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 定義需要顯示的年份
+        const years = ['2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015', '2014', '2013', '2012', 'PP/SP'];
+        
+        const tableBody = document.getElementById('table-body');
+        const totalCountSpan = document.getElementById('total-count');
+        const completedCountSpan = document.getElementById('completed-count');
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercentage = document.getElementById('progress-percentage');
+
+        // 總任務數 (每年 4 個勾選框)
+        const totalTasks = years.length * 4;
+        totalCountSpan.textContent = totalTasks;
+
+        // 生成表格內容
+        function renderTable() {
+            tableBody.innerHTML = '';
+            
+            years.forEach((year, index) => {
+                const tr = document.createElement('tr');
+                tr.className = `border-b border-slate-100 transition-colors ${index < 8 ? 'bg-blue-50/20' : ''}`; // 前8年高亮提示
+                
+                // 儲存鍵值
+                const keyP1Done = `dse-math-${year}-p1-done`;
+                const keyP1Corr = `dse-math-${year}-p1-corr`;
+                const keyP2Done = `dse-math-${year}-p2-done`;
+                const keyP2Corr = `dse-math-${year}-p2-corr`;
+                const keyNotes = `dse-math-${year}-notes`;
+
+                tr.innerHTML = `
+                    <td class="p-4 text-center font-bold text-slate-800 border-r border-slate-50">
+                        ${year} ${index === 0 ? '<span class="flex h-2 w-2 relative mx-auto mt-1"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>' : ''}
+                    </td>
+                    <td class="p-4 text-center border-r border-slate-50">
+                        <input type="checkbox" class="custom-checkbox dse-checkbox" id="${keyP1Done}" onchange="saveCheckbox('${keyP1Done}')">
+                    </td>
+                    <td class="p-4 text-center bg-blue-50/30 border-r border-slate-50">
+                        <input type="checkbox" class="custom-checkbox dse-checkbox" id="${keyP1Corr}" onchange="saveCheckbox('${keyP1Corr}')">
+                    </td>
+                    <td class="p-4 text-center border-r border-slate-50">
+                        <input type="checkbox" class="custom-checkbox dse-checkbox" id="${keyP2Done}" onchange="saveCheckbox('${keyP2Done}')">
+                    </td>
+                    <td class="p-4 text-center bg-blue-50/30 border-r border-slate-50">
+                        <input type="checkbox" class="custom-checkbox dse-checkbox" id="${keyP2Corr}" onchange="saveCheckbox('${keyP2Corr}')">
+                    </td>
+                    <td class="p-4">
+                        <input type="text" class="w-full bg-transparent border-b border-slate-200 focus:border-blue-500 focus:outline-none py-1 text-sm text-slate-600 transition-colors placeholder-slate-300" 
+                               placeholder="例如：3D Trigo 算錯, Probability 概念混淆..." 
+                               id="${keyNotes}" oninput="saveNotes('${keyNotes}')">
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            loadData();
+        }
+
+        // 儲存勾選框狀態
+        function saveCheckbox(id) {
+            const checkbox = document.getElementById(id);
+            localStorage.setItem(id, checkbox.checked);
+            updateProgress();
+        }
+
+        // 儲存筆記內容
+        function saveNotes(id) {
+            const input = document.getElementById(id);
+            localStorage.setItem(id, input.value);
+        }
+
+        // 載入本地儲存的數據
+        function loadData() {
+            // 讀取勾選框
+            const checkboxes = document.querySelectorAll('.dse-checkbox');
+            checkboxes.forEach(cb => {
+                const saved = localStorage.getItem(cb.id);
+                if (saved === 'true') {
+                    cb.checked = true;
+                }
+            });
+
+            // 讀取筆記
+            years.forEach(year => {
+                const noteId = `dse-math-${year}-notes`;
+                const noteInput = document.getElementById(noteId);
+                const savedNote = localStorage.getItem(noteId);
+                if (savedNote) {
+                    noteInput.value = savedNote;
+                }
+            });
+
+            updateProgress();
+        }
+
+        // 更新進度條
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('.dse-checkbox');
+            let checkedCount = 0;
+            checkboxes.forEach(cb => {
+                if (cb.checked) checkedCount++;
+            });
+
+            const percentage = Math.round((checkedCount / totalTasks) * 100);
+            
+            completedCountSpan.textContent = checkedCount;
+            progressPercentage.textContent = `${percentage}%`;
+            progressBar.style.width = `${percentage}%`;
+
+            // 滿分特效
+            if(percentage === 100) {
+                progressBar.classList.remove('bg-blue-500');
+                progressBar.classList.add('bg-green-500');
+                progressPercentage.classList.remove('text-blue-600');
+                progressPercentage.classList.add('text-green-600');
+            } else {
+                progressBar.classList.add('bg-blue-500');
+                progressBar.classList.remove('bg-green-500');
+                progressPercentage.classList.add('text-blue-600');
+                progressPercentage.classList.remove('text-green-600');
+            }
+        }
+
+        // 清除數據
+        function clearData() {
+            if(confirm("確定要清除所有打卡紀錄和筆記嗎？此操作無法還原。")) {
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('dse-math-')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                renderTable(); // 重新渲染表格
+            }
+        }
+
+        // 初始化
+        window.onload = renderTable;
+
+    </script>
+</body>
+</html>
+
